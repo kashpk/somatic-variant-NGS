@@ -44,7 +44,7 @@ results_df <- bind_rows(results) %>% arrange(Pvalue)
 head(results_df)
 
 
-# Filter significant associations (optional threshold)
+# Filter significant associations
 results_sig <- results_df %>%
   filter(!is.na(Pvalue)) %>%
   mutate(logP = -log10(Pvalue))  # stronger = higher
@@ -72,22 +72,12 @@ plot
 
 
 
-
-
-
-
-
-
-
-
-
-
-# === Step 6: Add binary indicator column for mutation presence ===
+# Add binary indicator column for mutation presence ===
 # Anything not "." or blank is considered "mutated"
 merged_df <- merged_df %>%
   mutate(Mutated = ifelse(Mutation != "." & Mutation != "", 1, 0))
 
-# === Step 7: Plot mutation frequency per gene across SCLC subtypes ===
+# Plot mutation frequency per gene across SCLC subtypes ===
 
 mutation_summary <- merged_df %>%
   group_by(GENE, Subtype) %>%
@@ -106,131 +96,4 @@ gene_subtype
 #ggsave("Gene_vs_subtype.png", plot = gene_subtype, width = 12, height = 10)
 #ggsave("Gene_vs_subtype.svg", plot = gene_subtype, width = 12, height = 10)
 
-getwd()
 
-# === Load Required Libraries ===
-library(dplyr)
-library(tidyr)
-library(stringr)
-library(ggplot2)
-
-# === Load mutation matrix ===
-mutation_data <- read.csv("mar08_gene_matrix_with_updated_exonic_func.csv", row.names = 1)
-
-# === Reshape to long format ===
-mutation_long <- mutation_data %>%
-  tibble::rownames_to_column(var = "GENE") %>%
-  pivot_longer(-GENE, names_to = "Sample_id", values_to = "Mutation")
-
-# === Load cell data (to get Subtypes) ===
-cell_data <- read.csv("cell_type_ngs.csv")
-
-# === Merge Subtype Info ===
-mutation_long <- mutation_long %>%
-  left_join(cell_data[, c("Sample_id", "Subtype")], by = "Sample_id")
-
-# === Clean mutation entries ===
-mutation_long$Mutation <- as.character(mutation_long$Mutation)
-mutation_long$Mutation[is.na(mutation_long$Mutation) | mutation_long$Mutation == "."] <- "No Mutation"
-
-# === Pivot wider to create one row per sample with mutations ===
-mutation_combination <- mutation_long %>%
-  pivot_wider(names_from = GENE, values_from = Mutation)
-
-# === Create combination string ===
-mutation_combination <- mutation_combination %>%
-  mutate(Combination = paste(ADGRL1, ATN1, TSC1, UBC, sep = " | "))
-
-# === Group by combination and subtype ===
-combination_summary <- mutation_combination %>%
-  group_by(Combination, Subtype) %>%
-  summarise(Sample_Count = n(), .groups = "drop") %>%
-  arrange(desc(Sample_Count))
-
-# === View ===
-print(combination_summary)
-
-# === Plot ===
-ggplot(combination_summary, aes(x = Subtype, y = Sample_Count, fill = Combination)) +
-  geom_bar(stat = "identity", position = "stack") +
-  labs(title = "Mutation Combination Distribution across Subtypes",
-       x = "SCLC Subtype",
-       y = "Sample Count",
-       fill = "Mutation Combination") +
-  theme_minimal(base_size = 14) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        plot.title = element_text(hjust = 0.5))
-
-# === Save if needed ===
-write.csv(combination_summary, "Mutation_Combination_Summary.csv", row.names = FALSE)
-# === Load Required Libraries ===
-library(dplyr)
-library(tidyr)
-library(ggplot2)
-library(forcats)
-library(tibble)
-
-# === Load Mutation Matrix ===
-mutation_data <- read.csv("mar08_gene_matrix_with_updated_exonic_func.csv", row.names = 1)
-
-# === Reshape to Long Format ===
-mutation_long <- mutation_data %>%
-  rownames_to_column(var = "Gene") %>%
-  pivot_longer(-Gene, names_to = "Sample_id", values_to = "Mutation")
-
-# === Load Cell Data to get Subtypes ===
-cell_data <- read.csv("cell_type_ngs.csv")
-
-# === Merge Subtype Info ===
-mutation_long <- mutation_long %>%
-  left_join(cell_data[, c("Sample_id", "Subtype")], by = "Sample_id")
-
-# === Clean Missing Values ===
-mutation_long$Mutation <- trimws(as.character(mutation_long$Mutation))
-mutation_long$Mutation[is.na(mutation_long$Mutation) | mutation_long$Mutation == "."] <- "No Mutation"
-
-# === Define Weights for Mutation Types ===
-assign_weight <- function(mutation) {
-  if (mutation %in% c("stopgain", "frameshift deletion", "frameshift insertion")) {
-    return(2)  # High-impact
-  } else if (mutation %in% c("Missense", "nonframeshift substitution", "nonframeshift deletion", "nonframeshift insertion")) {
-    return(1)  # Moderate impact
-  } else {
-    return(0)  # Synonymous or no mutation
-  }
-}
-
-# === Apply Weight Calculation ===
-mutation_long$Weight <- sapply(mutation_long$Mutation, assign_weight)
-
-# === Focus Only on Candidate Genes ===
-candidate_genes <- c("UBC", "TSC1", "ATN1", "ADGRL1")
-mutation_focus <- mutation_long %>%
-  filter(Gene %in% candidate_genes)
-
-# === Sum Weights per Sample ===
-mutation_scores <- mutation_focus %>%
-  group_by(Sample_id, Subtype) %>%
-  summarise(Combination_Score = sum(Weight), .groups = "drop")
-
-# === Clean Subtype Ordering (Optional but good) ===
-mutation_scores <- mutation_scores %>%
-  mutate(Subtype = factor(Subtype, levels = c("SCLC-A", "SCLC-I", "SCLC-N", "SCLC-P")))
-
-# === Plot ===
-plot_combination_score <- ggplot(mutation_scores, aes(x = Subtype, y = Combination_Score, fill = Subtype)) +
-  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
-  geom_jitter(width = 0.2, size = 2, alpha = 0.7, color = "black") +
-  theme_minimal(base_size = 14) +
-  labs(
-    title = "Mutation Combination Score Across SCLC Subtypes",
-    x = "SCLC Subtype",
-    y = "Mutation Combination Score"
-  ) +
-  theme(
-    plot.title = element_text(hjust = 0.5),
-    axis.text.x = element_text(angle = 45, hjust = 1)
-  )
-
-# === Display ===
-print(plot_combination_score)
