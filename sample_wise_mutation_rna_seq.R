@@ -69,7 +69,7 @@ rownames(gene_matrix) <- genes_of_interest
 colnames(gene_matrix) <- basename(csv_files)  # Use file names as column names
 
 # Save the resulting matrix to a file if needed
-write.csv(gene_matrix, file = "apr25_gene_matrix_with_updated_exonic_func.csv", row.names = TRUE)
+write.csv(gene_matrix, file = "gene_matrix_with_updated_exonic_func.csv", row.names = TRUE)
 
 getwd()
 
@@ -78,7 +78,7 @@ gene_matrix
 
 
 # Load the mutation data
-mutation_data <- read.csv("/home/dell/mar08_gene_matrix_with_updated_exonic_func.csv", row.names = 1)
+mutation_data <- read.csv("/home/dell/gene_matrix_with_updated_exonic_func.csv", row.names = 1)
 
 # View the first few rows of the data
 head(mutation_data)
@@ -139,7 +139,7 @@ library(forcats)
 library(tibble)
 
 # === Load mutation matrix ===
-mutation_data <- read.csv("mar08_gene_matrix_with_updated_exonic_func.csv", row.names = 1)
+mutation_data <- read.csv("gene_matrix_with_updated_exonic_func.csv", row.names = 1)
 
 # === Reshape to long format ===
 mutation_long <- mutation_data %>%
