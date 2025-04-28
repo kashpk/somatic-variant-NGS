@@ -7,7 +7,7 @@ library(tidyr)
 library(dplyr)
 set.seed(3454)
 
-candidate_df <- read.csv("/home/dell/apr25_gene_matrix_with_updated_exonic_func.csv")
+candidate_df <- read.csv("/home/dell/gene_matrix_with_updated_exonic_func.csv")
 
 
 cell_data <- read.csv("/home/dell/cell_type_ngs.csv", header = TRUE)
