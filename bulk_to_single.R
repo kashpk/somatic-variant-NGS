@@ -111,7 +111,7 @@ ggplot(cell_types_long, aes(x = Sample, y = Percentage, fill = Cell_Type)) +
 
 
 
-# List of normal sample names (update as necessary to match your dataset)
+# List of normal sample names
 normal_samples <- c(
   "B08.3483NA.normal", "B08.3758NA.normal", "B08.4386NA.normal", "B08.4579NA.normal",
   "N08.3503A.normal", "N08.3758A.normal", "N08.4497A.normal"
